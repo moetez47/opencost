@@ -21,3 +21,5 @@ export default function AppMuiThemeBridge({
 
   return <MuiThemeProvider theme={muiTheme}>{children}</MuiThemeProvider>;
 }
+
+

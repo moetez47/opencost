@@ -1,6 +1,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-const STORAGE_KEY = "opencost-settings-v1";
+const STORAGE_KEY = "Enclaive-settings-v1";
+const OLD_STORAGE_KEY = "Enclaive-settings-v1";
+
+if (typeof window !== "undefined") {
+  const hasNew = window.localStorage.getItem(STORAGE_KEY);
+  const hasOld = window.localStorage.getItem(OLD_STORAGE_KEY);
+  if (!hasNew && hasOld) {
+    window.localStorage.setItem(STORAGE_KEY, hasOld);
+  }
+}
 
 interface SettingsContextValue {
   defaultCurrency: string;
@@ -66,3 +75,5 @@ export function useSettings() {
   }
   return context;
 }
+
+

@@ -18,6 +18,7 @@ import {
 import CreateDashboardModal from "~/components/create-dashboard-modal";
 import DashboardAppShell from "~/components/dashboard-app-shell";
 import { decodeSharePayload, encodeSharePayload } from "~/lib/share-encoding";
+import { useCurrentUser } from "~/components/current-user-context";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -65,7 +66,7 @@ function decodeShareParam(encoded: string): SharedDashboardPayload | null {
 
 export function meta() {
   return [
-    { title: "OpenCost — Dashboards" },
+    { title: "Enclaive — Dashboards" },
     { name: "description", content: "Cloud cost intelligence dashboards" },
   ];
 }
@@ -82,6 +83,8 @@ export default function DashboardList() {
     useState<SharedDashboardPayload | null>(null);
   const { dashboards, createDashboard, duplicateDashboard, deleteDashboard } =
     useDashboard();
+  const { user } = useCurrentUser();
+  const isAdmin = user?.role === "admin";
   const searchTerm = searchParams.get("q") ?? "";
   const [searchInput, setSearchInput] = useState(searchTerm);
   const selectedTag = searchParams.get("tag") ?? "all";
@@ -126,7 +129,7 @@ export default function DashboardList() {
     const matchesTag =
       selectedTag === "all" || dashboard.tags.includes(selectedTag);
     const matchesOwner = selectedOwner === "all" || dashboard.owner === selectedOwner;
-    const scopeValue = dashboard.starred ? "opencost" : "public";
+    const scopeValue = dashboard.starred ? "Enclaive" : "public";
     const matchesScope = selectedScope === "all" || selectedScope === scopeValue;
 
     return matchesQuery && matchesTag && matchesOwner && matchesScope;
@@ -242,9 +245,11 @@ export default function DashboardList() {
                   </p>
                 )}
               </div>
-              <Button size="sm" onClick={() => setShowCreateModal(true)}>
-                Create Dashboard
-              </Button>
+              {isAdmin && (
+                <Button size="sm" onClick={() => setShowCreateModal(true)}>
+                  Create Dashboard
+                </Button>
+              )}
             </div>
 
             {/* List container */}
@@ -309,7 +314,7 @@ export default function DashboardList() {
                   }}
                 >
                   <option value="all">Filter by Scope</option>
-                  <option value="opencost">OpenCost</option>
+                  <option value="Enclaive">Enclaive</option>
                   <option value="public">Public</option>
                 </select>
                 <select
@@ -370,7 +375,7 @@ export default function DashboardList() {
                         dashboard.createdAt ?? dashboard.updatedAt,
                       ).toLocaleDateString();
                       const modifiedOn = new Date(dashboard.updatedAt).toLocaleString();
-                      const visibility = dashboard.starred ? "OpenCost" : "Public";
+                      const visibility = dashboard.starred ? "Enclaive" : "Public";
                       return (
                         <tr
                           key={dashboard.id}
@@ -433,32 +438,36 @@ export default function DashboardList() {
                             </div>
                           </td>
                           <td className="min-w-[10.5rem] whitespace-nowrap px-3 py-2.5 text-right align-middle">
-                            <button
-                              className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
-                              style={{
-                                background: "var(--cds-layer)",
-                                borderColor: "var(--cds-border-subtle)",
-                                color: "var(--cds-text-secondary)",
-                              }}
-                              aria-label="Edit dashboard"
-                              title="Edit dashboard details"
-                              onClick={() => setEditingDashboard(dashboard)}
-                            >
-                              <EditOutlined fontSize="small" />
-                            </button>
-                            <button
-                              className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
-                              style={{
-                                background: "var(--cds-layer)",
-                                borderColor: "var(--cds-border-subtle)",
-                                color: "var(--cds-text-secondary)",
-                              }}
-                              aria-label="Duplicate dashboard"
-                              title="Duplicate dashboard"
-                              onClick={() => handleDuplicateDashboard(dashboard)}
-                            >
-                              <ContentCopy fontSize="small" />
-                            </button>
+                            {isAdmin && (
+                              <button
+                                className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
+                                style={{
+                                  background: "var(--cds-layer)",
+                                  borderColor: "var(--cds-border-subtle)",
+                                  color: "var(--cds-text-secondary)",
+                                }}
+                                aria-label="Edit dashboard"
+                                title="Edit dashboard details"
+                                onClick={() => setEditingDashboard(dashboard)}
+                              >
+                                <EditOutlined fontSize="small" />
+                              </button>
+                            )}
+                            {isAdmin && (
+                              <button
+                                className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
+                                style={{
+                                  background: "var(--cds-layer)",
+                                  borderColor: "var(--cds-border-subtle)",
+                                  color: "var(--cds-text-secondary)",
+                                }}
+                                aria-label="Duplicate dashboard"
+                                title="Duplicate dashboard"
+                                onClick={() => handleDuplicateDashboard(dashboard)}
+                              >
+                                <ContentCopy fontSize="small" />
+                              </button>
+                            )}
                             <button
                               className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
                               style={{
@@ -472,19 +481,21 @@ export default function DashboardList() {
                             >
                               <IosShareOutlined fontSize="small" />
                             </button>
-                            <button
-                              className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
-                              style={{
-                                background: "var(--cds-layer)",
-                                borderColor: "var(--cds-border-subtle)",
-                                color: "var(--cds-text-secondary)",
-                              }}
-                              aria-label="Delete dashboard"
-                              title="Delete dashboard"
-                              onClick={() => handleDeleteDashboard(dashboard)}
-                            >
-                              <DeleteOutlined fontSize="small" />
-                            </button>
+                            {isAdmin && (
+                              <button
+                                className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
+                                style={{
+                                  background: "var(--cds-layer)",
+                                  borderColor: "var(--cds-border-subtle)",
+                                  color: "var(--cds-text-secondary)",
+                                }}
+                                aria-label="Delete dashboard"
+                                title="Delete dashboard"
+                                onClick={() => handleDeleteDashboard(dashboard)}
+                              >
+                                <DeleteOutlined fontSize="small" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );

@@ -30,3 +30,5 @@ export function ChartTypeToggle({ mode, onChange }: ChartTypeToggleProps) {
     </div>
   );
 }
+
+

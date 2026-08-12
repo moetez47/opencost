@@ -323,17 +323,7 @@ export function CloudFilterControls({
           <SelectItem key={o.value} value={o.value} text={o.name} />
         ))}
       </Select>
-      <Select
-        id={`${idPrefix}-cost-metric`}
-        labelText="Cost metric"
-        value={costMetric}
-        size="sm"
-        onChange={(e) => onCostMetricChange(e.target.value)}
-      >
-        {CLOUD_COST_METRIC_OPTIONS.map((o) => (
-          <SelectItem key={o.value} value={o.value} text={o.name} />
-        ))}
-      </Select>
+      
     </div>
   );
 }
@@ -415,3 +405,5 @@ export function AssetsFilterControls({
     </div>
   );
 }
+
+

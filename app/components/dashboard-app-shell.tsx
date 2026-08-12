@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
+import { AdminPanelSettingsOutlined } from "@mui/icons-material";
+import { useCurrentUser } from "~/components/current-user-context";
+import ProfileMenu from "~/components/profile-menu";
 import {
   HomeOutlined,
   ChevronLeft,
@@ -12,6 +15,7 @@ import {
   SettingsOutlined,
   LightModeOutlined,
   DarkModeOutlined,
+  LogoutOutlined,
 } from "@mui/icons-material";
 import { useDashboard } from "~/components/dashboard-context";
 import { useReport } from "~/components/report-context";
@@ -87,8 +91,7 @@ function NavGroupLabel({
 }
 
 const PAGE_TITLES: Record<string, string> = {
-  "/": "Home",
-  "/dashboards": "Dashboards",
+  "/": "Dashboards",
   "/reports": "Reports",
   "/settings": "Settings",
 };
@@ -101,6 +104,7 @@ export default function DashboardAppShell({
   const { dashboards } = useDashboard();
   const { reports } = useReport();
   const { theme, toggleTheme } = useAppTheme();
+  const { user } = useCurrentUser();
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth < 768;
@@ -145,17 +149,16 @@ export default function DashboardAppShell({
     PAGE_TITLES[pathname] ??
     (pathname.startsWith("/dashboard/") ? "Dashboard" : null) ??
     (pathname.startsWith("/report/") ? "Report" : null) ??
-    "OpenCost";
+    "Enclaive";
 
-  const quickLinks = useMemo<SearchEntry[]>(
-    () => [
-      { id: "home", label: "Home", type: "page", icon: <HomeOutlined fontSize="small" />, href: "/" },
-      { id: "dashboards", label: "Dashboards", type: "page", icon: <DashboardOutlined fontSize="small" />, href: "/dashboards" },
-      { id: "reports", label: "Reports", type: "page", icon: <DescriptionOutlined fontSize="small" />, href: "/reports" },
-      { id: "settings", label: "Settings", type: "page", icon: <SettingsOutlined fontSize="small" />, href: "/settings" },
-    ],
-    [],
-  );
+    const quickLinks = useMemo<SearchEntry[]>(
+        () => [
+          
+          { id: "dashboards", label: "Dashboards", type: "page", icon: <DashboardOutlined fontSize="small" />, href: "/dashboards" },
+          { id: "settings", label: "Settings", type: "page", icon: <SettingsOutlined fontSize="small" />, href: "/settings" },
+        ],
+        [],
+      );
 
   const dashboardLinks = useMemo<SearchEntry[]>(
     () =>
@@ -282,12 +285,12 @@ export default function DashboardAppShell({
                 className="flex h-7 w-7 items-center justify-center rounded"
                 style={{ background: "var(--cds-button-primary)" }}
               >
-                <span className="text-[11px] font-bold text-white">OC</span>
+                <span className="text-[11px] font-bold text-white">EN</span>
               </div>
             ) : (
               <img
                 src="/logo.png"
-                alt="OpenCost"
+                alt="Enclaive"
                 className="h-5 w-auto"
                 style={{
                   filter: theme === "g100"
@@ -336,18 +339,8 @@ export default function DashboardAppShell({
 
           {/* Nav */}
           <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 pr-1.5">
-            <NavLink
-              href="/"
-              label="Home"
-              icon={<HomeOutlined sx={{ fontSize: 16 }} />}
-              active={homeActive}
-              collapsed={collapsed}
-            />
-            <NavGroupLabel
-              label="Reporting"
-              icon={<DashboardOutlined sx={{ fontSize: 16 }} />}
-              collapsed={collapsed}
-            />
+            
+            
             <NavLink
               href="/dashboards"
               label="Dashboards"
@@ -357,20 +350,22 @@ export default function DashboardAppShell({
               collapsed={collapsed}
               tutorialPulse={isTutorialActive && navHighlight === "dashboards"}
             />
-            <NavLink
-              href="/reports"
-              label="Reports"
-              icon={<DescriptionOutlined sx={{ fontSize: 16 }} />}
-              active={reportsActive}
-              nested
-              collapsed={collapsed}
-              tutorialPulse={isTutorialActive && navHighlight === "reports"}
-            />
+            
 
+            {user?.role === "admin" && (
+              <NavLink
+                href="/admin/users"
+                label="Users"
+                icon={<AdminPanelSettingsOutlined sx={{ fontSize: 16 }} />}
+                active={pathname.startsWith("/admin/users")}
+                collapsed={collapsed}
+              />
+            )}
             <div
               className="mt-auto"
               style={{ borderTop: "1px solid var(--cds-border-subtle)" }}
             />
+            
             <NavLink
               href="/settings"
               label="Settings"
@@ -378,6 +373,26 @@ export default function DashboardAppShell({
               active={settingsActive}
               collapsed={collapsed}
             />
+            <button
+              onClick={async () => {
+                await fetch("/api/logout", { method: "POST" });
+                window.location.href = "/login";
+              }}
+              className="v2-nav-item"
+              style={{
+                width: "100%",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+              title={collapsed ? "Logout" : undefined}
+            >
+              <span className="inline-flex items-center flex-shrink-0">
+                <LogoutOutlined sx={{ fontSize: 16 }} />
+              </span>
+              {!collapsed && <span className="truncate">Logout</span>}
+            </button>
           </nav>
 
           {/* Collapse toggle */}
@@ -426,7 +441,7 @@ export default function DashboardAppShell({
                   className="text-xs font-medium"
                   style={{ color: "var(--cds-text-secondary)" }}
                 >
-                  OpenCost
+                  Enclaive
                 </span>
                 <span
                   className="text-xs"
@@ -445,16 +460,17 @@ export default function DashboardAppShell({
 
             {/* Header actions */}
             <div className="relative z-[2] flex flex-shrink-0 items-center gap-1.5">
-              {/* Theme toggle */}
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
-                style={{
-                  background: "var(--cds-layer-02)",
-                  borderColor: "var(--cds-border-subtle)",
-                  color: "var(--cds-text-secondary)",
-                }}
+  <ProfileMenu />
+  {/* Theme toggle */}
+  <button
+    type="button"
+    onClick={toggleTheme}
+    className="inline-flex h-7 w-7 items-center justify-center rounded border transition-colors"
+    style={{
+      background: "var(--cds-layer-02)",
+      borderColor: "var(--cds-border-subtle)",
+      color: "var(--cds-text-secondary)",
+    }}
                 title={theme === "g100" ? "Switch to light mode" : "Switch to dark mode"}
                 aria-label="Toggle theme"
               >
@@ -638,3 +654,5 @@ export default function DashboardAppShell({
     </div>
   );
 }
+
+

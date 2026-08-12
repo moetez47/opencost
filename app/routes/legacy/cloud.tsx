@@ -26,7 +26,7 @@ import CloudCost from "~/components/legacy/cloudCost/cloudCost";
 import { CloudCostDetails } from "~/components/legacy/cloudCost/cloudCostDetails";
 
 export function meta() {
-  return [{ title: "OpenCost — Cloud Costs" }];
+  return [{ title: "Enclaive — Cloud Costs" }];
 }
 
 const CloudCosts = () => {
@@ -108,7 +108,7 @@ const CloudCosts = () => {
           {
             primary: "Failed to load report data",
             secondary:
-              "Please update OpenCost to the latest version, and open an Issue if problems persist.",
+              "Please update Enclaive to the latest version, and open an Issue if problems persist.",
           },
         ]);
       } else {
@@ -117,7 +117,7 @@ const CloudCosts = () => {
             primary: "Failed to load report data",
             secondary:
               err.message ||
-              "Please open an Issue with OpenCost if problems persist.",
+              "Please open an Issue with Enclaive if problems persist.",
           },
         ]);
       }
@@ -189,7 +189,7 @@ const CloudCosts = () => {
         <>
           Learn more about setting up Cloud Costs{" "}
           <Link
-            href={"https://www.opencost.io/docs/configuration/#cloud-costs"}
+            href={"https://www.Enclaive.io/docs/configuration/#cloud-costs"}
             target="_blank"
           >
             here
@@ -297,3 +297,5 @@ const CloudCosts = () => {
 };
 
 export default React.memo(CloudCosts);
+
+

@@ -9,7 +9,16 @@ import {
 
 export type ThemeName = "white" | "g100";
 
-export const THEME_STORAGE_KEY = "opencost-theme";
+export const THEME_STORAGE_KEY = "Enclaive-theme";
+const OLD_THEME_STORAGE_KEY = "Enclaive-theme";
+
+if (typeof window !== "undefined") {
+  const hasNew = window.localStorage.getItem(THEME_STORAGE_KEY);
+  const hasOld = window.localStorage.getItem(OLD_THEME_STORAGE_KEY);
+  if (!hasNew && hasOld) {
+    window.localStorage.setItem(THEME_STORAGE_KEY, hasOld);
+  }
+}
 
 interface ThemeContextValue {
   theme: ThemeName;
@@ -101,3 +110,5 @@ export function useAppTheme(): ThemeContextValue {
   }
   return ctx;
 }
+
+

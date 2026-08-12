@@ -43,7 +43,7 @@ class AllocationService {
     win: string,
     aggregate: string,
     options: {
-      /** OpenCost accumulate query string (e.g. `day`, `weeknow`). Legacy callers may still pass booleans. */
+      /** Enclaive accumulate query string (e.g. `day`, `weeknow`). Legacy callers may still pass booleans. */
       accumulate?: string | boolean;
       filters?: { property: string; value: string }[] | string;
       includeIdle?: boolean;
@@ -129,3 +129,5 @@ class AllocationService {
 }
 
 export default new AllocationService();
+
+

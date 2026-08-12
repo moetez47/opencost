@@ -1,4 +1,4 @@
-export const TUTORIAL_WIZARD_STORAGE_KEY = "opencost-tutorial-wizard-completed";
+export const TUTORIAL_WIZARD_STORAGE_KEY = "Enclaive-tutorial-wizard-completed";
 
 export function readTutorialWizardCompleted(): boolean {
   try {
@@ -14,3 +14,5 @@ export function markTutorialWizardCompleted(): void {
   } catch {
   }
 }
+
+

@@ -25,9 +25,13 @@ export default defineConfig({
   server: {
     proxy: {
       "/model": {
-        target: "http://localhost:9090",
+        target: "http://localhost:9003",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/model/, ""),
+      },
+      "/api": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
       },
     },
   },

@@ -196,7 +196,7 @@ export const EXTERNAL_COST_SORT_DIRECTION_OPTIONS = [
 ];
 
 export const REPORT_DATA_SOURCE_OPTIONS: { label: string; value: ReportLayer }[] = [
-  { label: "OpenCost Allocation", value: "allocation" },
+  { label: "Enclaive Allocation", value: "allocation" },
   { label: "Cloud Cost", value: "cloudCost" },
   { label: "Infrastructure Assets", value: "infraAssets" },
   { label: "External Cost", value: "externalCost" },
@@ -500,3 +500,5 @@ export function mergeReportQuery(base: ReportQuery, updates: Partial<ReportQuery
     layer: base.layer,
   });
 }
+
+

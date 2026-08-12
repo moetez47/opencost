@@ -8,7 +8,7 @@ import {
 } from "~/components/dashboard-context";
 
 export function meta() {
-  return [{ title: "OpenCost — Home" }];
+  return [{ title: "Enclaive — Home" }];
 }
 
 export default function HomePage() {
@@ -47,3 +47,5 @@ export default function HomePage() {
     </DashboardAppShell>
   );
 }
+
+

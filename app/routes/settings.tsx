@@ -6,8 +6,8 @@ import { currencyCodes } from "~/constants/currencyCodes";
 
 export function meta() {
   return [
-    { title: "OpenCost — Settings" },
-    { name: "description", content: "Global settings for OpenCost" },
+    { title: "Enclaive — Settings" },
+    { name: "description", content: "Global settings for Enclaive" },
   ];
 }
 
@@ -121,15 +121,15 @@ export default function SettingsPage() {
             </div>
             <div className="px-5 py-5">
               <div className="flex items-center gap-3 mb-4">
-                <img src="/logo.png" alt="OpenCost" className="h-6 w-auto" />
+                <img src="/logo.png" alt="Enclaive" className="h-6 w-auto" />
               </div>
               <p className="m-0 mb-4 text-xs" style={{ color: "var(--cds-text-secondary)" }}>
-                OpenCost is an open-source, vendor-neutral solution for measuring and allocating
+                Enclaive is an open-source, vendor-neutral solution for measuring and allocating
                 Kubernetes and cloud infrastructure costs in real time.
               </p>
               <div className="flex flex-col gap-2">
                  <a
-                  href="https://www.opencost.io/docs"
+                  href="https://www.Enclaive.io/docs"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
@@ -139,13 +139,13 @@ export default function SettingsPage() {
                   <OpenInNew fontSize="inherit" className="ml-0.5" />
                 </a>
                 <a
-                  href="https://github.com/opencost/opencost"
+                  href="https://github.com/Enclaive/Enclaive"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
                   style={{ color: "var(--cds-link-primary)" }}
                 >
-                  GitHub — opencost/opencost
+                  GitHub — Enclaive/Enclaive
                   <OpenInNew fontSize="inherit" className="ml-0.5" />
                 </a>
                 <a
@@ -155,7 +155,7 @@ export default function SettingsPage() {
                   className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
                   style={{ color: "var(--cds-link-primary)" }}
                 >
-                  CNCF Slack — #opencost
+                  CNCF Slack — #Enclaive
                   <OpenInNew fontSize="inherit" className="ml-0.5" />
                 </a>
               </div>
@@ -166,3 +166,5 @@ export default function SettingsPage() {
     </DashboardAppShell>
   );
 }
+
+

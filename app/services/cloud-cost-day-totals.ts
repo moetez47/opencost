@@ -46,3 +46,5 @@ class CloudCostDayTotalsService {
 }
 
 export default new CloudCostDayTotalsService();
+
+

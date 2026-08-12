@@ -23,7 +23,7 @@ import { aggToKeyMapExternalCosts } from "~/components/legacy/externalCosts/toke
 import { ExternalCostDetails } from "~/components/legacy/externalCosts/externalCostDetailModal";
 
 export function meta() {
-  return [{ title: "OpenCost — External Costs" }];
+  return [{ title: "Enclaive — External Costs" }];
 }
 
 const ExternalCosts = () => {
@@ -73,7 +73,7 @@ const ExternalCosts = () => {
           primary: "Failed to load report data",
           secondary:
             err.message ||
-            "Please open an Issue with OpenCost if problems persist.",
+            "Please open an Issue with Enclaive if problems persist.",
         },
       ]);
       setExternalCostData([]);
@@ -99,7 +99,7 @@ const ExternalCosts = () => {
           primary: "Failed to load report data",
           secondary:
             err.message ||
-            "Please open an Issue with OpenCost if problems persist.",
+            "Please open an Issue with Enclaive if problems persist.",
         },
       ]);
       setExternalCostTableData([]);
@@ -235,3 +235,5 @@ const ExternalCosts = () => {
 };
 
 export default React.memo(ExternalCosts);
+
+

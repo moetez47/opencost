@@ -41,3 +41,5 @@ export function SwitchableChart({
   }
   return <SimpleBarChart data={data} options={options} />;
 }
+
+

@@ -20,6 +20,21 @@ const WIDGET_TYPES = [
     description: "Cloud service spend with utilization and totals",
   },
   {
+    value: "hetzner-costs-table",
+    label: "Hetzner Cost",
+    description: "Hetzner monitoring VM + backup server costs",
+  },
+  {
+    value: "gcp-costs-table",
+    label: "GCP Cost",
+    description: "GCP billing export costs by service",
+  },
+  {
+    value: "ai-costs-chart",
+    label: "AI Cost",
+    description: "LLM token usage and cost breakdown by model",
+  },
+  {
     value: "cost-allocation-chart",
     label: "Cost Allocation",
     description:
@@ -229,14 +244,14 @@ export default function DashboardBuilder({
       )}
 
       <Modal
-        open={showAddWidget}
-        onRequestClose={() => setShowAddWidget(false)}
-        modalHeading="Add Widget"
-        primaryButtonText="Add"
-        secondaryButtonText="Cancel"
-        onRequestSubmit={addWidget}
-        size="sm"
-      >
+  open={showAddWidget}
+  onRequestClose={() => setShowAddWidget(false)}
+  modalHeading="Add Widget"
+  primaryButtonText="Add"
+  secondaryButtonText="Cancel"
+  onRequestSubmit={addWidget}
+  size="sm"
+>
         <div className="mb-4">
           <Select
             id="widget-type"
@@ -276,3 +291,5 @@ export default function DashboardBuilder({
     </div>
   );
 }
+
+

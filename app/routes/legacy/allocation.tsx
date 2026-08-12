@@ -27,7 +27,7 @@ import {
 import { currencyCodes } from "~/constants/currencyCodes";
 
 export function meta() {
-  return [{ title: "OpenCost — Cost Allocation" }];
+  return [{ title: "Enclaive — Cost Allocation" }];
 }
 
 const windowOptions = [
@@ -225,7 +225,7 @@ const ReportsPage = () => {
           {
             primary: "Failed to load report data",
             secondary:
-              "Please update OpenCost to the latest version, then open an Issue on GitHub if problems persist.",
+              "Please update Enclaive to the latest version, then open an Issue on GitHub if problems persist.",
           },
         ]);
       } else {
@@ -415,3 +415,5 @@ const ReportsPage = () => {
 };
 
 export default React.memo(ReportsPage);
+
+

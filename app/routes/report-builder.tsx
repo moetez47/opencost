@@ -12,7 +12,7 @@ import { runReport, type ReportRunResult } from "~/services/report-query";
 import { normalizeReportQuery, type Report } from "~/types/report";
 
 export function meta() {
-  return [{ title: "OpenCost — Report Builder" }];
+  return [{ title: "Enclaive — Report Builder" }];
 }
 
 function escapeCsvField(value: string | number | null | undefined): string {
@@ -293,3 +293,5 @@ export default function ReportBuilderPage() {
     </DashboardAppShell>
   );
 }
+
+

@@ -24,13 +24,19 @@ const DashboardApp = lazy(() =>
     import("~/components/dashboard-context"),
     import("~/components/report-context"),
     import("~/components/tutorial-wizard-context"),
-  ]).then(([dashboard, report, tutorial]) => ({
+    import("~/components/auth-guard"),
+    import("~/components/current-user-context"),
+  ]).then(([dashboard, report, tutorial, auth, currentUser]) => ({
     default: () => (
       <SettingsProvider>
         <dashboard.DashboardProvider>
           <report.ReportProvider>
             <tutorial.TutorialWizardProvider>
-              <Outlet />
+              <auth.default>
+                <currentUser.CurrentUserProvider>
+                  <Outlet />
+                </currentUser.CurrentUserProvider>
+              </auth.default>
             </tutorial.TutorialWizardProvider>
           </report.ReportProvider>
         </dashboard.DashboardProvider>
@@ -38,7 +44,6 @@ const DashboardApp = lazy(() =>
     ),
   })),
 );
-
 // Applies the persisted / preferred theme before React hydrates so the first
 // paint matches the user's choice (avoids a light-to-dark flash). The
 // localStorage read is isolated in its own try/catch so that the matchMedia
@@ -66,6 +71,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <link rel="icon" type="image/png" href="/logo.png" />
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
@@ -154,3 +160,5 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     </main>
   );
 }
+
+

@@ -16,8 +16,8 @@ import {
 
 const STEP_CONTENT: { title: string; body: string }[] = [
   {
-    title: "Welcome to OpenCost",
-    body: "OpenCost helps you understand Kubernetes and cloud spend in one place. This short tour introduces the sidebar: where you open dashboards for live widget layouts, and reports for saved cost views. You can leave the tour anytime with Skip.",
+    title: "Welcome to Enclaive",
+    body: "Enclaive helps you understand Kubernetes and cloud spend in one place. This short tour introduces the sidebar: where you open dashboards for live widget layouts, and reports for saved cost views. You can leave the tour anytime with Skip.",
   },
   {
     title: "Dashboards",
@@ -162,7 +162,7 @@ function TutorialWizardModal() {
       onRequestClose={skipTutorial}
       modalHeading={`Tutorial · Step ${tutorialStep + 1} of 3`}
       size="sm"
-      aria-label="OpenCost getting started tutorial"
+      aria-label="Enclaive getting started tutorial"
     >
       <div className="mb-2">
         <h3 className="m-0 text-lg font-semibold" style={{ color: "var(--cds-text-primary)" }}>{step.title}</h3>
@@ -211,3 +211,5 @@ function TutorialWizardModal() {
     </Modal>
   );
 }
+
+

@@ -7,15 +7,12 @@ export const CLOUD_WINDOW_OPTIONS = [
   { name: "Last week", value: "lastweek" },
   { name: "Last 7 days", value: "7d" },
   { name: "Last 14 days", value: "14d" },
+  { name: "Last 30 days", value: "30d" },
 ];
 
 export const CLOUD_AGGREGATION_OPTIONS = [
   { name: "Account", value: "accountID" },
-  { name: "Invoice Entity", value: "invoiceEntityID" },
   { name: "Provider", value: "provider" },
-  { name: "Service", value: "service" },
-  { name: "Category", value: "category" },
-  { name: "Item", value: "item" },
 ];
 
 export const CLOUD_COST_METRIC_OPTIONS = [
@@ -24,3 +21,6 @@ export const CLOUD_COST_METRIC_OPTIONS = [
   { name: "Invoiced Cost", value: "InvoicedCost" },
   { name: "Amortized Cost", value: "AmortizedCost" },
 ];
+
+
+

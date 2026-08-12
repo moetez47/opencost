@@ -14,11 +14,11 @@ interface AppHeaderProps {
 export default function AppHeader({ children }: AppHeaderProps) {
   const { theme, toggleTheme } = useAppTheme();
   const isDark = theme === "g100";
-
   return (
-    <Header aria-label="OpenCost Platform">
+    <Header aria-label="Enclaive Platform">
       <HeaderName href="/" prefix="">
-        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="OpenCost" className="h-6" />
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Enclaive" className="h-6" />
+        <span className="ml-2 font-semibold">Enclaive</span>
       </HeaderName>
       <HeaderGlobalBar>
         {children}
@@ -34,3 +34,4 @@ export default function AppHeader({ children }: AppHeaderProps) {
     </Header>
   );
 }
+

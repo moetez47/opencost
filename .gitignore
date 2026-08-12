@@ -26,3 +26,6 @@ tilt_config.json
 # Lighthouse CI
 .lighthouseci/
 
+server/.env
+
+secrets/

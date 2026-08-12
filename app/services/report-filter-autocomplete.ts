@@ -110,3 +110,5 @@ export async function fetchReportFilterAutocomplete(options: {
   const { data } = await client.get(endpoint, { params });
   return parseSuggestionList(data);
 }
+
+

@@ -8,7 +8,7 @@ import DashboardView from "~/components/dashboard-view";
 import type { Widget } from "~/components/dashboard-context";
 
 export function meta() {
-  return [{ title: "OpenCost — Dashboard" }];
+  return [{ title: "Enclaive — Dashboard" }];
 }
 
 export default function DashboardPage() {
@@ -61,3 +61,5 @@ export default function DashboardPage() {
     </DashboardAppShell>
   );
 }
+
+

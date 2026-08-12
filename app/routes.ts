@@ -11,11 +11,13 @@ const legacyRoutes: RouteConfig = [
 
 const newUIRoutes: RouteConfig = [
   index("routes/home.tsx"),
+  route("login", "routes/login.tsx"),
   route("dashboards", "routes/dashboard-list.tsx"),
   route("dashboard/:dashboardId", "routes/dashboard.tsx"),
-  route("reports", "routes/reports-list.tsx"),
-  route("report/:reportId", "routes/report-builder.tsx"),
+
   route("settings", "routes/settings.tsx"),
+  route("reset-password", "routes/reset-password.tsx"),
+  route("admin/users", "routes/admin-users.tsx"),
   route("*", "routes/$.tsx"),
 ];
 

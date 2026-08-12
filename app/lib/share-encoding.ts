@@ -23,3 +23,5 @@ export function decodeSharePayload(encoded: string): unknown {
   const json = new TextDecoder().decode(bytes);
   return JSON.parse(json) as unknown;
 }
+
+

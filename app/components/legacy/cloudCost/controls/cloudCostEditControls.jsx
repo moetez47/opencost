@@ -45,20 +45,6 @@ function EditCloudCostControls({
         </Select>
       </FormControl>
       <FormControl style={{ margin: 8, minWidth: 120 }} variant="standard">
-        <InputLabel id="costMetric-label">Cost Metric</InputLabel>
-        <Select
-          id="costMetric"
-          value={costMetric}
-          onChange={(e) => setCostMetric(e.target.value)}
-        >
-          {costMetricOptions.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
-              {opt.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <FormControl style={{ margin: 8, minWidth: 120 }} variant="standard">
         <InputLabel id="currency-label">Currency</InputLabel>
         <Select
           id="currency"

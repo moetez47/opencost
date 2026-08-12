@@ -14,6 +14,10 @@ import WidgetCard from "./widget-card";
 import { AllocationFiltersProvider } from "./allocation-filters-context";
 import { encodeSharePayload } from "~/lib/share-encoding";
 import type { Widget, Dashboard } from "./dashboard-context";
+import HetznerCostWidget from "./hetzner-cost-widget";
+import GcpCostWidget from "./gcp-cost-widget";
+import { useCurrentUser } from "~/components/current-user-context";
+import AiCostWidget from "./ai-cost-widget";
 
 function WidgetRenderer({
   widget,
@@ -25,7 +29,7 @@ function WidgetRenderer({
   switch (widget.type) {
     case "summary-cards":
       return <CostSummaryCards title={widget.title} />;
-    case "cloud-costs-chart":
+   case "cloud-costs-chart":
       return (
         <WidgetCard>
           <CloudCostWidget />
@@ -38,6 +42,30 @@ function WidgetRenderer({
             title={widget.title}
             description="Cloud service spend with utilization and totals"
           />
+        </WidgetCard>
+      );
+    case "hetzner-costs-table":
+      return (
+        <WidgetCard>
+          <HetznerCostWidget
+            title={widget.title}
+            description="Monitoring VM live pricing + fixed-rate backup servers"
+          />
+        </WidgetCard>
+      );
+      case "gcp-costs-table":
+      return (
+        <WidgetCard>
+          <GcpCostWidget
+            title={widget.title}
+            description="GCP billing export costs by service"
+          />
+        </WidgetCard>
+      );
+    case "ai-costs-chart":
+      return (
+        <WidgetCard>
+          <AiCostWidget />
         </WidgetCard>
       );
     case "cost-allocation-chart":
@@ -125,6 +153,8 @@ export default function DashboardView({
   showBackButton = true,
 }: DashboardViewProps) {
   const [isEditMode, setIsEditMode] = useState(false);
+  const { user } = useCurrentUser();
+  const isAdmin = user?.role === "admin";
   const [currentWidgets, setCurrentWidgets] = useState<Widget[]>(
     dashboard.widgets,
   );
@@ -234,39 +264,43 @@ export default function DashboardView({
             <ShareOutlined sx={{ fontSize: 14 }} />
             Share
           </button>
-          <button
-            type="button"
-            onClick={() => setIsEditMode(true)}
-            className="inline-flex h-8 items-center gap-1.5 rounded border px-3 text-xs font-medium transition-colors"
-            style={{
-              background: "var(--cds-layer)",
-              borderColor: "var(--cds-border-subtle)",
-              color: "var(--cds-text-secondary)",
-            }}
-            title="Edit layout"
-          >
-            <EditOutlined sx={{ fontSize: 14 }} />
-            Edit
-          </button>
-          <OverflowMenu
-            renderIcon={OverflowMenuVertical}
-            iconDescription="More options"
-            flipped
-            size="sm"
-          >
-            {onDuplicate && (
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setIsEditMode(true)}
+              className="inline-flex h-8 items-center gap-1.5 rounded border px-3 text-xs font-medium transition-colors"
+              style={{
+                background: "var(--cds-layer)",
+                borderColor: "var(--cds-border-subtle)",
+                color: "var(--cds-text-secondary)",
+              }}
+              title="Edit layout"
+            >
+              <EditOutlined sx={{ fontSize: 14 }} />
+              Edit
+            </button>
+          )}
+          {isAdmin && (
+            <OverflowMenu
+              renderIcon={OverflowMenuVertical}
+              iconDescription="More options"
+              flipped
+              size="sm"
+            >
+              {onDuplicate && (
+                <OverflowMenuItem
+                  itemText="Duplicate Dashboard"
+                  onClick={onDuplicate}
+                />
+              )}
               <OverflowMenuItem
-                itemText="Duplicate Dashboard"
-                onClick={onDuplicate}
+                itemText="Delete Dashboard"
+                hasDivider
+                disabled={isDefaultDashboard}
+                isDelete
               />
-            )}
-            <OverflowMenuItem
-              itemText="Delete Dashboard"
-              hasDivider
-              disabled={isDefaultDashboard}
-              isDelete
-            />
-          </OverflowMenu>
+            </OverflowMenu>
+          )}
         </div>
       </div>
 
@@ -310,12 +344,16 @@ export default function DashboardView({
             <p className="v2-empty-state__description">
               Add widgets to build your cost visibility dashboard.
             </p>
-            <Button onClick={() => setIsEditMode(true)} renderIcon={EditOutlined} size="sm">
-              Add Widgets
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setIsEditMode(true)} renderIcon={EditOutlined} size="sm">
+                Add Widgets
+              </Button>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+
+

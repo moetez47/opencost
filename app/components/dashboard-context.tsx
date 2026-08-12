@@ -1,6 +1,17 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
-const STORAGE_KEY = "opencost-dashboards-v2";
+const STORAGE_KEY = "Enclaive-dashboards-v2";
+const OLD_STORAGE_KEY = "Enclaive-dashboards-v2";
+
+// One-time migration: if the old key has data and the new key doesn't,
+// copy it over so renaming the storage key doesn't wipe existing dashboards.
+if (typeof window !== "undefined") {
+  const hasNew = window.localStorage.getItem(STORAGE_KEY);
+  const hasOld = window.localStorage.getItem(OLD_STORAGE_KEY);
+  if (!hasNew && hasOld) {
+    window.localStorage.setItem(STORAGE_KEY, hasOld);
+  }
+}
 export const DEFAULT_DASHBOARD_ID = "1";
 
 export function timeAgo(isoString: string): string {
@@ -108,7 +119,7 @@ const DEFAULT_DASHBOARDS: Dashboard[] = [
   {
     id: DEFAULT_DASHBOARD_ID,
     name: "Home",
-    description: "OpenCost home page—overall cloud and Kubernetes cost overview",
+    description: "Enclaive home page—overall cloud and Kubernetes cost overview",
     widgets: [
       { id: "1", type: "summary-cards", title: "Cost Summary", gridSize: "4" },
       {
@@ -305,3 +316,5 @@ export function useDashboard() {
   }
   return context;
 }
+
+

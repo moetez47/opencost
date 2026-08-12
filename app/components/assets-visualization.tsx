@@ -75,14 +75,14 @@ export default function AssetsVisualization() {
           setAssets(fetched);
           if (fetched.length === 0) {
             setError(
-              "No assets returned for this window — check OpenCost API connection and filters.",
+              "No assets returned for this window — check Enclaive API connection and filters.",
             );
           }
         }
       } catch {
         if (!cancelled) {
           setAssets([]);
-          setError("Could not load assets — check OpenCost API connection.");
+          setError("Could not load assets — check Enclaive API connection.");
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -435,3 +435,5 @@ export default function AssetsVisualization() {
     </div>
   );
 }
+
+

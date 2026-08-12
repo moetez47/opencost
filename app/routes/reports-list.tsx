@@ -50,8 +50,8 @@ function decodeShareParam(encoded: string): SharedReportPayload | null {
 
 export function meta() {
   return [
-    { title: "OpenCost — Reports" },
-    { name: "description", content: "Cloud cost and infrastructure reports in OpenCost" },
+    { title: "Enclaive — Reports" },
+    { name: "description", content: "Cloud cost and infrastructure reports in Enclaive" },
   ];
 }
 
@@ -418,3 +418,5 @@ export default function ReportsListPage() {
     </>
   );
 }
+
+
