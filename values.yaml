@@ -1,0 +1,49 @@
+﻿imagePullSecrets:
+  - name: harbor-pull
+opencost:
+  cloudCost:
+    enabled: true
+    monthToDateInterval: 6
+    queryWindowDays: 7
+    refreshRateHours: 6
+    runWindowDays: 7
+  cloudIntegrationSecret: cloud-costs
+  mcp:
+    enabled: false
+  prometheus:
+    internal:
+      enabled: true
+      namespaceName: monitoring
+      path: ""
+      port: 9090
+      scheme: http
+      serviceName: kube-prometheus-prometheus
+  retention1d: 35
+  ui:
+    enabled: true
+    image:
+      repository: moetez45/opencost-ui
+      tag: "custom"
+      pullPolicy: IfNotPresent
+    extraEnv:
+      - name: DB_HOST
+        value: postgres.opencost.svc.cluster.local
+      - name: DB_PORT
+        value: "5432"
+      - name: POSTGRES_DB
+        valueFrom:
+          secretKeyRef:
+            name: postgres-credentials
+            key: POSTGRES_DB
+      - name: POSTGRES_USER
+        valueFrom:
+          secretKeyRef:
+            name: postgres-credentials
+            key: POSTGRES_USER
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: postgres-credentials
+            key: POSTGRES_PASSWORD
+service:
+  type: ClusterIP

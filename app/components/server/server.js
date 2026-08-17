@@ -1,4 +1,5 @@
 ﻿require("dotenv").config();
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const { getHetznerCosts } = require("./index"); // Hetzner cost merger (monitoring + backup)

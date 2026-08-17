@@ -1,0 +1,61 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencost-auth
+  namespace: opencost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opencost-auth
+  template:
+    metadata:
+      labels:
+        app: opencost-auth
+    spec:
+      containers:
+        - name: opencost-auth
+          image: moetez45/opencost-auth:custom
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+          env:
+            - name: DB_HOST
+              value: postgres.opencost.svc.cluster.local
+            - name: DB_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: POSTGRES_PASSWORD
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: SESSION_SECRET
+            - name: PORT
+              value: "4000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opencost-auth
+  namespace: opencost
+spec:
+  selector:
+    app: opencost-auth
+  ports:
+    - port: 4000
+      targetPort: 4000
+  type: ClusterIP
