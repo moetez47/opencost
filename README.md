@@ -51,10 +51,9 @@ npm run start
 
 ## Configuration / Environment variables
 
-There is an environment example under `app/components/server/.env` (or similar `.env` files). Before running features that require database or external service access, set the required environment variables (for example PostgreSQL credentials or GCP keys):
+There is an environment example under `app/components/server/.env` (or similar `.env` files). Before running features that require database or external service access, set the required environment variables (for example PostgreSQL credentials or cloud provider API keys/tokens for AWS, Azure, Hetzner, Anthropic, and OpenAI):
 
 - `DATABASE_URL` / `PGHOST` / `PGUSER` / `PGPASSWORD` / `PGDATABASE`
-- GCP service account keys if required: `secrets/gcp-service-account.json`
 
 Do not commit sensitive information to the repository.
 
