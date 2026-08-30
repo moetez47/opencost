@@ -5,8 +5,6 @@ export function meta() {
   return [{ title: "Enclaive — Login" }];
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
-
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +17,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/login`, {
+      const res = await fetch(`/api/login`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

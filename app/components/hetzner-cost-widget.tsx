@@ -35,8 +35,6 @@ interface HetznerCostResponse {
   generatedAt: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
-
 const headers = [
   { key: "name", header: "Server" },
   { key: "description", header: "Description" },
@@ -72,7 +70,7 @@ export default function HetznerCostWidget({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_BASE}/api/hetzner-costs`, {
+        const res = await fetch(`/api/hetzner-costs`, {
   credentials: "include",
 });
         const json = await res.json();
@@ -218,4 +216,5 @@ export default function HetznerCostWidget({
     </div>
   );
 }
+
 
