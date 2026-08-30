@@ -1,5 +1,3 @@
-﻿imagePullSecrets:
-  - name: harbor-pull
 opencost:
   cloudCost:
     enabled: true
@@ -10,14 +8,15 @@ opencost:
   cloudIntegrationSecret: cloud-costs
   mcp:
     enabled: false
+  opencost:
   prometheus:
     internal:
       enabled: true
-      namespaceName: monitoring
+      namespaceName: prometheus-system
       path: ""
-      port: 9090
+      port: 80
       scheme: http
-      serviceName: kube-prometheus-prometheus
+      serviceName: prometheus-server
   retention1d: 35
   ui:
     enabled: true
@@ -47,3 +46,4 @@ opencost:
             key: POSTGRES_PASSWORD
 service:
   type: ClusterIP
+
