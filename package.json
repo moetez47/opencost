@@ -11,8 +11,8 @@
     "legacy": "VITE_LEGACY_MODE=true react-router dev",
     "start": "serve build/client -s",
     "typecheck": "react-router typegen && tsc",
-    "migrate": "node scripts/migrate.js",
-    "bootstrap-admin": "node scripts/bootstrap-admin.js"
+    
+    
   },
   "dependencies": {
     "@carbon/charts": "^1.27.2",
