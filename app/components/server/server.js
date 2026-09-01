@@ -1,4 +1,4 @@
-﻿require("dotenv").config();
+require("dotenv").config();
 const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
@@ -7,12 +7,21 @@ const { getGcpCosts } = require("./gcp");
 const { getOpenRouterCosts } = require("./openrouter");
 const bcrypt = require("bcryptjs");
 const pool = require("./db");
-
 const app = express();
+
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
+  console.error("SESSION_SECRET is missing or too short (needs 32+ chars). Refusing to start.");
+  process.exit(1);
+}
+
+app.set("trust proxy", 1);
+
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.FRONTEND_ORIGIN,
   credentials: true,
 }));
+
+
 
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
@@ -25,7 +34,9 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 8, // 8 hour session
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 1000 * 60 * 60 * 8,
   },
 }));
 
@@ -148,6 +159,33 @@ app.get("/api/users", requireAdmin, async (req, res) => {
     res.json({ users: result.rows });
   } catch (err) {
     console.error("List users error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.put("/api/users/:id/password", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: "New password must be at least 8 characters" });
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const result = await pool.query(
+      `UPDATE users SET password_hash = $1, first_login = TRUE
+       WHERE user_id = $2 RETURNING user_id, username`,
+      [passwordHash, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ ok: true, user: result.rows[0] });
+  } catch (err) {
+    console.error("Change password error:", err.message);
     res.status(500).json({ error: "Internal server error" });
   }
 });
