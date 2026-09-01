@@ -1,105 +1,289 @@
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+# Enclaive Cost Monitoring Platform
 
-# Enclaive's Cost Monitoring Platform (opencost)
+A multi-cloud cost monitoring platform combining the OpenCost UI/cost-model
+with a custom authentication backend, deployed on Kubernetes via Helm.
 
-Frontend application for Enclaive's Cost Monitoring Platform — a React + TypeScript UI providing cost tables, widgets, and report views for cloud cost analysis.
 
-## Overview
 
-This repository contains the frontend part of the Enclaive's Cost Monitoring Platform solution. It is a modern React (TypeScript) application that uses `vite` and `react-router` for development and builds. The UI includes widgets, report views, and integrations with external services to present costs by cloud, service, and resource.
+---
 
-## Project structure
+## 1. Architecture
 
-- `app/`: React components, routes and main application logic.
-- `public/`: static assets served to the client.
-- `scripts/`: project utilities (migrations, admin bootstrap, etc.).
-- `db/`: database pool/configuration helpers (used by server/devops code).
-- `Dockerfile*`, `nginx.conf`: container and reverse-proxy configuration files.
+The platform is made of two independently built images plus a vendored
+third-party component:
 
-## Prerequisites
+- **frontend** (`Dockerfile`) — React Router v7 + Vite app, built and served
+  behind nginx. nginx also acts as a reverse proxy:
+  - `/model/` → the OpenCost cost-model API (`upstream model`,
+    `${API_SERVER}:${API_PORT}`)
+  - `/api/` → the custom backend (`upstream backend`,
+    `${BACKEND_SERVER}:${BACKEND_PORT}`)
+  - Everything else → the built SPA, with a fallback rewrite to `index.html`
+    for client-side routing.
+- **backend** (`Dockerfile.server`) — Node.js auth/API server
+  (`app/components/server/`). Handles login, sessions, admin user
+  management, and provider-key/cost-data endpoints.
+- **OpenCost + OpenCost UI (vendored)** — installed as a **separate Helm
+  release** (`opencost`, chart `opencost/opencost` v2.5.29) from the
+  upstream OpenCost project, *not* part of this repo's own chart. It
+  provides the actual cost-allocation model and ingests cost data from
+  Prometheus (cluster resource costs) and cloud billing exports (AWS
+  Athena/S3, and via the same mechanism, Azure/GCP — see §7).
 
-- Node.js (v18+ recommended)
-- npm or yarn
-- Docker (optional, for containerized execution)
+Shared infrastructure:
+- **PostgreSQL** — used by both the custom backend and OpenCost UI
+  (`postgres.opencost.svc.cluster.local:5432`).
+- **Prometheus** — OpenCost's cost model reads cluster metrics from
+  `prometheus-server.prometheus-system.svc.cluster.local:80`.
 
-## Useful scripts
-
-Scripts available in `package.json`:
-
-- `npm run dev` — start the app in development mode.
-- `npm run legacy` — start the legacy compatibility dev mode.
-- `npm run build` — build the client for production.
-- `npm run build:legacy` — build a legacy bundle (`VITE_LEGACY_MODE=true`).
-- `npm run build:all` — run `build` then `build:legacy`.
-- `npm run start` — serve the static build (`serve build/client -s`).
-- `npm run typecheck` — run type generation and `tsc`.
-- `npm run migrate` — run migrations via `scripts/migrate.js`.
-
-Examples:
-
-```bash
-npm install
-npm run dev
+```
+                        ┌─────────────────────────┐
+   client ── https ──▶  │   frontend (nginx+SPA)  │
+                        │  /api/   ──▶ backend    │
+                        │  /model/ ──▶ opencost   │
+                        └─────────────────────────┘
+                              │              │
+                         backend:4000   opencost:9003
+                              │              │
+                          Postgres      Prometheus
+                                        (+ AWS/Azure/GCP billing exports)
 ```
 
-To build and run the production bundle:
+---
 
-```bash
-npm run build
-npm run start
+## 2. Required infrastructure
+
+- A Kubernetes cluster (Minikube used for local/dev deployment).
+- An Ingress controller (chart creates an `Ingress` resource, `ingress.yaml`).
+- A PostgreSQL instance reachable from the cluster.
+- A Prometheus instance reachable from the cluster (for OpenCost's cost
+  model). In the current dev cluster this is `prometheus-server` in the
+  `prometheus-system` namespace, port `80`.
+- (Optional, for full cost visibility) Access to cloud billing exports —
+  AWS Athena/S3, and/or Azure/GCP equivalents — see §7.
+
+---
+
+## 3. Environment variables
+
+### Backend (`app/components/server`)
+
+Confirmed by grepping the backend source for `process.env.*` usage:
+
+| Variable | Purpose |
+|---|---|
+| `PORT` | Backend listen port (`4000` in the Helm chart) |
+| `NODE_ENV` | `production` in deployment |
+| `FRONTEND_ORIGIN` | CORS allow-origin — set by the chart to `https://<ingress.host>` |
+| `DB_HOST`, `DB_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Postgres connection |
+| `SESSION_SECRET` | Session/cookie signing secret |
+| `OPENAI_ADMIN_KEY` | OpenAI provider key |
+| `ANTHROPIC_ADMIN_KEY` | Anthropic provider key |
+| `OPENROUTER_MANAGEMENT_KEY` | OpenRouter provider key — **this is the actual name read by the code.** `helm/values.example.yaml`'s comment currently says `OPENROUTER_API_KEY`, which is wrong and should be corrected to `OPENROUTER_MANAGEMENT_KEY` so the two don't drift. |
+| `HETZNER_MONITORING_TOKEN` | Hetzner monitoring API token |
+| `HETZNER_BACKUP_SERVERS_JSON` | JSON list/config of Hetzner backup servers |
+| `GCP_PROJECT_ID`, `GCP_BQ_DATASET`, `GCP_BQ_TABLE`, `GCP_SERVICE_ACCOUNT_KEY_PATH` | **[KNOWN GAP]** Used by `gcp.js` but **not currently present** in `helm/values.example.yaml` or any Deployment template — there is no Helm-managed secret feeding these today. Set them manually on the backend Deployment/Pod for now (e.g. via `kubectl set env` or a hand-added `envFrom`) until they're wired into the chart. |
+
+### Frontend
+
+| Variable | Purpose |
+|---|---|
+| `VITE_BASE_API_URL` | Build-time API base URL (Vite) — set via `.env` or `--build-arg vite_base_api_url` |
+| `BACKEND_SERVER`, `BACKEND_PORT` | nginx upstream target for `/api/` (set to `backend` / chart's backend service port) |
+| `API_SERVER`, `API_PORT` | nginx upstream target for `/model/` (OpenCost cost-model service) |
+| `UI_PORT`, `UI_PATH`, `BASE_URL` | nginx serving path/port config, templated into `default.nginx.conf` |
+| `PROXY_CONNECT_TIMEOUT`, `PROXY_SEND_TIMEOUT`, `PROXY_READ_TIMEOUT` | Proxy timeouts (default `60s`) |
+| `LEGACY_MODE` | If `true`, serves the legacy build from `/var/www/legacy` instead of the standard build |
+
+---
+
+## 4. Database initialization
+
+Handled automatically by `app/components/server/docker-entrypoint.sh`, which
+runs as the backend container's entrypoint:
+
+1. Waits for Postgres to accept connections (`SELECT 1` retry loop).
+2. Runs `npm run migrate` (→ `scripts/migrate.js`), which reads `schema.sql`
+   and executes it as-is against the database. This is **not** a versioned
+   migration system — it's a single idempotent script (the schema uses
+   `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS`), so it's
+   safe to run on every restart.
+3. Runs `npm run bootstrap-admin` (→ `scripts/bootstrap-admin.js`):
+   - Checks whether any user with `role = 'admin'` already exists. If so,
+     it logs `An admin user already exists. Skipping bootstrap.` and exits
+     — safe to run on every restart.
+   - If not, it creates one admin user with:
+     - username: `admin`
+     - email: `admin@opencost.local`
+     - a randomly generated 16-character password (`crypto.randomBytes`),
+       bcrypt-hashed before storage
+     - `first_login: TRUE`
+   - **The plaintext password is printed to stdout exactly once, at
+     creation time, and is never stored or shown again.**
+4. Starts the server (`node server.js`).
+
+### Schema
+
+Two tables, created by `schema.sql`:
+- `users` — `user_id` (UUID PK), `username`, `email` (both unique),
+  `password_hash`, `role` (`admin`/`user`, CHECK-constrained),
+  `first_login` (boolean, defaults `TRUE`), `last_login`, `created_at`,
+  `created_by` (self-referencing FK to `users`).
+- `password_reset_tokens` — `token_id` (UUID PK), `user_id` (FK, cascades
+  on delete), `token_hash`, `expires_at`, `used`, `created_at`.
+
+### Retrieving the first admin password
+
+On first deploy, the admin password is only ever printed once, to the
+backend container's logs. Retrieve it immediately after first startup:
+
+```powershell
+kubectl logs deploy/backend -n <namespace> | Select-String -Context 2,2 "Admin account created"
 ```
 
-## Configuration / Environment variables
+If you miss it, there is no recovery path via the bootstrap script itself
+(it will just skip, since an admin already exists) — use the
+`password_reset_tokens` flow, or the `admin-change-password` endpoint
+(added per item 3 of the engineering log) once authenticated another way,
+or reset the admin's `password_hash` directly in Postgres as a last resort.
 
-There is an environment example under `app/components/server/.env` (or similar `.env` files). Before running features that require database or external service access, set the required environment variables (for example PostgreSQL credentials or cloud provider API keys/tokens for AWS, Azure, Hetzner, Anthropic, and OpenAI):
+Because `first_login` defaults to `TRUE`, the frontend/backend should be
+expected to prompt for a password change on the admin's first login —
+worth confirming that flow is actually enforced client-side before demoing.
 
-- `DATABASE_URL` / `PGHOST` / `PGUSER` / `PGPASSWORD` / `PGDATABASE`
+---
 
-Do not commit sensitive information to the repository.
+## 5. Building both images
 
-## Docker
+Both images are built locally and loaded directly into the cluster's
+container runtime — **there is no image registry push in this pipeline.**
+(The `build-and-publish-release.yml` GitHub Actions workflow in this repo
+pushes to `ghcr.io/opencost/opencost-ui`, but that is the **upstream**
+OpenCost project's own release workflow, inherited from the fork this repo
+originated from — it is not part of this project's deployment path and
+requires credentials this project doesn't have.)
 
-A `Dockerfile` is provided. Example usage:
+```powershell
+# Point your shell's Docker client at Minikube's own daemon
+minikube docker-env | Invoke-Expression
 
-```bash
-# build locally
-docker build -t opencost-ui:latest .
+# Frontend
+docker build -f Dockerfile -t enclaive-frontend:latest .
 
-# run container
-docker run -p 3000:3000 --env-file app/components/server/.env opencost-ui:latest
+# Backend
+docker build -f Dockerfile.server -t enclaive-backend:latest .
 ```
 
-## Overriding the Base API URL
+Confirm both images are present in Minikube's image store:
 
-It is useful to override the `BASE_URL` variable responsible for requests sent from the UI to the API. This means that instead of sending requests to `<domain>/model/allocation/compute/etc`, requests can be sent to `<domain>/{BASE_URL_OVERRIDE}/allocation/compute/etc`. To do this, supply the environment variable `BASE_URL_OVERRIDE` to the docker image.
-
-```sh
-$ docker run -p 9091:9090 -e BASE_URL_OVERRIDE=anything -d opencost-ui:latest
+```powershell
+minikube image ls | Select-String "enclaive"
 ```
 
-## Overriding the Base UI URL Path
+If you build with your host's normal Docker daemon instead (not
+`minikube docker-env`), load the images into Minikube afterward:
 
-To serve the web interface under a path other than the root (`/`), you need to build a custom image using the `vite_basename` build argument.
-For example, you can clone this project and run:
-
-```sh
-$ docker build --build-arg vite_basename=/anything --tag opencost-ui:latest .
+```powershell
+minikube image load enclaive-frontend:latest
+minikube image load enclaive-backend:latest
 ```
 
-This ensures that all static assets are served from the specified path.
+Both Deployments in `helm/templates/` are set to `imagePullPolicy: Never`,
+so the images **must** already be present in the cluster's runtime before
+`helm install`/`upgrade` — nothing will be pulled from a registry.
 
-Once the container is running, the UI will be accessible at `<domain>/{vite_basename}`.
+---
 
-## Tests
+## 6. Helm deployment
 
-This repository does not include explicit unit tests in `package.json`. To add tests, consider using `vitest` or `jest` and add corresponding scripts.
+The chart (`helm/`, chart name `enclaive-cost-monitoring`) deploys the
+`backend` and `frontend` Deployments/Services and an Ingress. It expects
+**three pre-existing Kubernetes Secrets** (not created by the chart itself):
 
-## Contributing
+```powershell
+kubectl create secret generic enclaive-postgres-secret -n <namespace> `
+  --from-literal=DB_HOST=<host> `
+  --from-literal=DB_PORT=5432 `
+  --from-literal=POSTGRES_DB=<db> `
+  --from-literal=POSTGRES_USER=<user> `
+  --from-literal=POSTGRES_PASSWORD=<password>
 
-- Fork the repo, create a feature/bugfix branch, open a PR and describe your changes.
-- Follow the existing TypeScript/ESLint style and run `npm run typecheck` before submitting.
+kubectl create secret generic enclaive-provider-keys-secret -n <namespace> `
+  --from-literal=OPENAI_ADMIN_KEY=<key> `
+  --from-literal=ANTHROPIC_ADMIN_KEY=<key> `
+  --from-literal=OPENROUTER_MANAGEMENT_KEY=<key> `
+  --from-literal=HETZNER_MONITORING_TOKEN=<token> `
+  --from-literal=HETZNER_BACKUP_SERVERS_JSON='<json>'
 
-## Helpful resources
+kubectl create secret generic enclaive-session-secret -n <namespace> `
+  --from-literal=SESSION_SECRET=<random-long-string>
+```
 
-- Configuration files: `vite.config.ts`, `next.config.js` (present depending on compatibility needs)
-- Utility scripts: `scripts/migrate.js`, `scripts/bootstrap-admin.js`
+Then copy `helm/values.example.yaml` to `helm/values.yaml`, adjust image
+tags/repo names and `ingress.host`, and install:
+
+```powershell
+helm install enclaive-cost-monitoring ./helm -f helm/values.yaml -n <namespace> --create-namespace
+```
+
+Note: `backend-deployment.yaml` pins `replicas: 1` — the backend uses an
+in-memory session store, so running more than one replica would cause
+inconsistent logins. Leave it at 1 unless the session store is externalized
+first.
+
+---
+
+## 7. Configuring AWS / Azure / GCP cost data (via OpenCost)
+
+Cloud billing cost data is **not** handled by this repo's own chart — it's
+configured on the separate vendor `opencost` Helm release
+(`opencost/opencost`, installed independently, see `values.yaml` at the
+repo root for the currently-applied config).
+
+That release references a secret named by `opencost.cloudIntegrationSecret`
+(currently `cloud-costs`), mounted into the `opencost` container at
+`/var/configs/cloud-integration.json`. This file's format follows OpenCost's
+own multi-cloud billing integration schema (see OpenCost's official docs at
+https://opencost.io/docs/ for the exact JSON structure per provider —
+AWS/Athena, Azure, and GCP/BigQuery are all supported this way).
+
+The current dev cluster has an active AWS integration (confirmed from
+runtime logs — `CloudCost[.../s3://aws-athena-query-results-...]`
+ingesting Athena data). Azure/GCP would be added as additional entries in
+the same `cloud-integration.json`, following OpenCost's documented format.
+
+Separately, the custom **backend** also has its own, unrelated GCP
+integration (`GCP_PROJECT_ID`, `GCP_BQ_DATASET`, `GCP_BQ_TABLE`,
+`GCP_SERVICE_ACCOUNT_KEY_PATH` — see §3) which is a different code path
+from OpenCost's cloud-integration.json and is not yet wired into the Helm
+chart (see the **[KNOWN GAP]** note in §3).
+
+---
+
+## 8. Configuring OpenAI / Anthropic / OpenRouter / Hetzner
+
+These are consumed directly by the custom backend, via
+`enclaive-provider-keys-secret` (see §6):
+
+- `OPENAI_ADMIN_KEY` — OpenAI
+- `ANTHROPIC_ADMIN_KEY` — Anthropic
+- `OPENROUTER_MANAGEMENT_KEY` — OpenRouter (note the naming correction in §3)
+- `HETZNER_MONITORING_TOKEN` — Hetzner monitoring API
+- `HETZNER_BACKUP_SERVERS_JSON` — Hetzner backup server list/config, as JSON
+
+No further backend-side setup is required beyond populating the secret —
+the backend reads these directly from its environment at startup.
+
+---
+
+## Known gaps to close before this doc is considered final
+
+1. `helm/values.example.yaml`'s comment says `OPENROUTER_API_KEY`; the code
+   reads `OPENROUTER_MANAGEMENT_KEY`. Fix the comment (or rename in code,
+   your call) so they match.
+2. GCP backend vars (`GCP_PROJECT_ID` etc.) have no Helm-managed secret —
+   decide whether to wire them in or keep them as a manual step.
+3. ~~`scripts/bootstrap-admin.js` behavior~~ — resolved, see §4.
+4. Confirm the frontend actually enforces a password-change prompt when
+   `first_login = TRUE`, since the schema supports it but the flow wasn't
+   verified in this session.
