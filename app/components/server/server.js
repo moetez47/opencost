@@ -1,4 +1,4 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
@@ -28,6 +28,7 @@ const cookieParser = require("cookie-parser");
 
 app.use(cookieParser());
 app.use(express.json());
+app.set('trust proxy', 1);
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -198,7 +199,7 @@ const HETZNER_MONITORING_TOKEN = process.env.HETZNER_MONITORING_TOKEN;
 // ---- Anthropic (Claude) cost report ----
 app.get("/api/anthropic-costs", requireAuth, async (req, res) => {
   if (!ANTHROPIC_ADMIN_KEY) {
-    return res.status(500).json({ error: "ANTHROPIC_ADMIN_KEY missing on server" });
+    return res.status(503).json({ error: "Anthropic provider not configured" });
   }
   try {
     const days = Number(req.query.days || 7);
@@ -230,7 +231,7 @@ app.get("/api/anthropic-costs", requireAuth, async (req, res) => {
 // ---- OpenAI cost report ----
 app.get("/api/openai-costs", requireAuth, async (req, res) => {
   if (!OPENAI_ADMIN_KEY) {
-    return res.status(500).json({ error: "OPENAI_ADMIN_KEY missing on server" });
+    return res.status(503).json({ error: "OpenAI provider not configured" });
   }
   try {
     const days = Number(req.query.days || 7);
@@ -260,11 +261,11 @@ app.get("/api/openai-costs", requireAuth, async (req, res) => {
 // ---- Hetzner cost report (monitoring live + backup fixed) ----
 app.get("/api/hetzner-costs", requireAuth, async (req, res) => {
   if (!HETZNER_MONITORING_TOKEN) {
-    return res.status(500).json({ error: "HETZNER_MONITORING_TOKEN missing on server" });
+    return res.status(503).json({ error: "Hetzner monitoring provider not configured" });
   }
   if (!process.env.HETZNER_BACKUP_SERVERS_JSON) {
-  return res.status(500).json({
-    error: "HETZNER_BACKUP_SERVERS_JSON missing on server",
+  return res.status(503).json({
+    error: "Hetzner backup provider not configured",
   });
 }
   try {
@@ -276,6 +277,9 @@ app.get("/api/hetzner-costs", requireAuth, async (req, res) => {
 });
 // ---- GCP cost report (BigQuery billing export) ----
 app.get("/api/gcp-costs", requireAuth, async (req, res) => {
+  if (!process.env.GCP_SERVICE_ACCOUNT_KEY_PATH || !process.env.GCP_PROJECT_ID || !process.env.GCP_BQ_DATASET || !process.env.GCP_BQ_TABLE) {
+    return res.status(503).json({ error: "GCP provider not configured" });
+  }
   try {
     const data = await getGcpCosts();
     res.json(data);
@@ -286,6 +290,9 @@ app.get("/api/gcp-costs", requireAuth, async (req, res) => {
 
 // ---- OpenRouter cost report (per-model activity, last 30 UTC days) ----
 app.get("/api/openrouter-costs", requireAuth, async (req, res) => {
+  if (!process.env.OPENROUTER_API_KEY) {
+    return res.status(503).json({ error: "OpenRouter provider not configured" });
+  }
   try {
     const data = await getOpenRouterCosts();
     res.json(data);

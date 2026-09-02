@@ -10,9 +10,7 @@
     "dev": "react-router dev",
     "legacy": "VITE_LEGACY_MODE=true react-router dev",
     "start": "serve build/client -s",
-    "typecheck": "react-router typegen && tsc",
-    
-    
+    "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
     "@carbon/charts": "^1.27.2",
