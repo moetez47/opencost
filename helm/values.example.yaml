@@ -28,3 +28,7 @@ providerKeys:
 session:
   existingSecret: enclaive-session-secret
   # Secret must contain: SESSION_SECRET
+opencost:
+  service:
+    name: opencost
+    port: 9003

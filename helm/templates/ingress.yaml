@@ -3,11 +3,27 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: enclaive-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
+          - path: /model(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Values.opencost.service.name }}
+                port:
+                  number: {{ .Values.opencost.service.port }}
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: backend
+                port:
+                  number: {{ .Values.backend.service.port }}
           - path: /
             pathType: Prefix
             backend:
