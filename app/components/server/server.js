@@ -16,8 +16,6 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
   process.exit(1);
 }
 
-app.set("trust proxy", 1);
-
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN,
   credentials: true,
@@ -90,7 +88,14 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    res.json({ ok: true });
+  });
 });
 
 app.get("/api/me", (req, res) => {
