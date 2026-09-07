@@ -1,0 +1,1 @@
+﻿UPDATE users SET password_hash = '$2b$10$pSZ6tSVz3O6nVAlO6pVsYed5HYDGQRJGyVzXbtseQ2BLoPboUb7Tq', first_login = false WHERE role = 'admin';
