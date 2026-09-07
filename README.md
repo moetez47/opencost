@@ -226,10 +226,33 @@ tags/repo names and `ingress.host`, and install:
 helm install enclaive-cost-monitoring ./helm -f helm/values.yaml -n <namespace> --create-namespace
 ```
 
-Note: `backend-deployment.yaml` pins `replicas: 1` — the backend uses an
+Note: `helm/templates/backend-deployment.yaml` pins `replicas: 1` — the backend uses an
 in-memory session store, so running more than one replica would cause
 inconsistent logins. Leave it at 1 unless the session store is externalized
 first.
+
+### Tearing down a local/test deployment
+
+Once testing is done, remove the release and clean up local resources:
+
+```powershell
+# Remove the Helm release (deletes Deployments, Services, Ingress)
+helm uninstall enclaive-cost-monitoring -n <namespace>
+
+# Optional: remove the secrets created manually for testing
+kubectl delete secret enclaive-postgres-secret enclaive-provider-keys-secret enclaive-session-secret -n <namespace>
+
+# Optional: remove the locally built images from Minikube's image store
+minikube image rm enclaive-frontend:latest
+minikube image rm enclaive-backend:latest
+
+# Optional: stop or fully delete the Minikube cluster if no longer needed
+minikube stop
+# or, to remove it entirely:
+# minikube delete
+```
+
+> **Deployment method:** this project is deployed exclusively through the Helm chart in `helm/`. Do not apply any standalone `kubectl apply -f` manifests for the backend or frontend outside of `helm/templates/` � any such files are legacy artifacts from an earlier approach and are considered obsolete.
 
 ---
 

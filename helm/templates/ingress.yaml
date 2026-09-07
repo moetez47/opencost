@@ -1,8 +1,9 @@
 {{- if .Values.ingress.enabled }}
+# Ingress #1: /model — needs prefix stripped (OpenCost expects paths without /model)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: enclaive-ingress
+  name: enclaive-ingress-model
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
@@ -17,8 +18,19 @@ spec:
                 name: {{ .Values.opencost.service.name }}
                 port:
                   number: {{ .Values.opencost.service.port }}
-          - path: /api(/|$)(.*)
-            pathType: ImplementationSpecific
+---
+# Ingress #2: /api and / — no rewrite, backend routes already include /api prefix
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: enclaive-ingress-main
+spec:
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
             backend:
               service:
                 name: backend

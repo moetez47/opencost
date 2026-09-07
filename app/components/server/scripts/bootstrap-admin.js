@@ -40,8 +40,11 @@ async function bootstrapAdmin() {
     process.exitCode = 1;
   } finally {
     client.release();
-    await pool.end();
   }
 }
 
-bootstrapAdmin();
+module.exports = { bootstrapAdmin };
+
+if (require.main === module) {
+  bootstrapAdmin().then(() => pool.end());
+}

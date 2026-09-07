@@ -20,8 +20,11 @@ async function migrate() {
     process.exitCode = 1;
   } finally {
     client.release();
-    await pool.end();
   }
 }
 
-migrate();
+module.exports = { migrate };
+
+if (require.main === module) {
+  migrate().then(() => pool.end());
+}

@@ -1,4 +1,4 @@
-﻿require("dotenv").config();
+require("dotenv").config({ quiet: true });
 const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
@@ -7,6 +7,8 @@ const { getGcpCosts } = require("./gcp");
 const { getOpenRouterCosts } = require("./openrouter");
 const bcrypt = require("bcryptjs");
 const pool = require("./db");
+const { migrate } = require("./scripts/migrate");
+const { bootstrapAdmin } = require("./scripts/bootstrap-admin");
 const app = express();
 
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
@@ -263,11 +265,13 @@ app.get("/api/hetzner-costs", requireAuth, async (req, res) => {
   if (!HETZNER_MONITORING_TOKEN) {
     return res.status(503).json({ error: "Hetzner monitoring provider not configured" });
   }
-  if (!process.env.HETZNER_BACKUP_SERVERS_JSON) {
-  return res.status(503).json({
-    error: "Hetzner backup provider not configured",
-  });
-}
+  const hasBackupJson = !!process.env.HETZNER_BACKUP_SERVERS_JSON;
+  const hasBackupFallback = !!process.env.HETZNER_BACKUP_MONTHLY_TOTAL_USD && !!process.env.HETZNER_BACKUP_SERVER_NAMES;
+  if (!hasBackupJson && !hasBackupFallback) {
+    return res.status(503).json({
+      error: "Hetzner backup provider not configured",
+    });
+  }
   try {
     const data = await getHetznerCosts();
     res.json(data);
@@ -301,6 +305,17 @@ app.get("/api/openrouter-costs", requireAuth, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`AI cost server listening on http://localhost:${PORT}`);
-});
+async function startServer() {
+  try {
+    await migrate();
+    await bootstrapAdmin();
+  } catch (err) {
+    console.error("Startup initialization failed:", err.message);
+    process.exit(1);
+  }
+  app.listen(PORT, () => {
+    console.log(`AI cost server listening on http://localhost:${PORT}`);
+  });
+}
+
+startServer();

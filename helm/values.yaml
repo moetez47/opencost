@@ -1,0 +1,34 @@
+frontend:
+  image:
+    repository: enclaive-frontend
+    tag: latest
+  service:
+    port: 9090
+
+backend:
+  image:
+    repository: enclaive-backend
+    tag: latest
+  service:
+    port: 4000
+
+ingress:
+  enabled: true
+  host: opencost.example.com
+
+postgres:
+  existingSecret: enclaive-postgres-secret
+  # Secret must contain: DB_HOST, DB_PORT, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+
+providerKeys:
+  existingSecret: enclaive-provider-keys-secret
+  # Secret must contain: OPENAI_ADMIN_KEY, ANTHROPIC_ADMIN_KEY, OPENROUTER_API_KEY,
+  # HETZNER_MONITORING_TOKEN, HETZNER_BACKUP_SERVERS_JSON
+
+session:
+  existingSecret: enclaive-session-secret
+  # Secret must contain: SESSION_SECRET
+opencost:
+  service:
+    name: opencost
+    port: 9003
