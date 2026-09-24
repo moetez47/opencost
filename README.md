@@ -252,7 +252,7 @@ minikube stop
 # minikube delete
 ```
 
-> **Deployment method:** this project is deployed exclusively through the Helm chart in `helm/`. Do not apply any standalone `kubectl apply -f` manifests for the backend or frontend outside of `helm/templates/` — any such files are legacy artifacts from an earlier approach and are considered obsolete.
+> **Deployment method:** this project is deployed exclusively through the Helm chart in `helm/`. Do not apply any standalone `kubectl apply -f` manifests for the backend or frontend outside of `helm/templates/` â€” any such files are legacy artifacts from an earlier approach and are considered obsolete.
 
 ---
 
