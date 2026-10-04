@@ -1,4 +1,5 @@
-﻿require("dotenv").config();
+require("dotenv").config({ quiet: true });
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const { getHetznerCosts } = require("./index"); // Hetzner cost merger (monitoring + backup)
@@ -6,25 +7,37 @@ const { getGcpCosts } = require("./gcp");
 const { getOpenRouterCosts } = require("./openrouter");
 const bcrypt = require("bcryptjs");
 const pool = require("./db");
-
+const { migrate } = require("./scripts/migrate");
+const { bootstrapAdmin } = require("./scripts/bootstrap-admin");
 const app = express();
+
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
+  console.error("SESSION_SECRET is missing or too short (needs 32+ chars). Refusing to start.");
+  process.exit(1);
+}
+
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.FRONTEND_ORIGIN,
   credentials: true,
 }));
+
+
 
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 
 app.use(cookieParser());
 app.use(express.json());
+app.set('trust proxy', 1);
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 8, // 8 hour session
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 1000 * 60 * 60 * 8,
   },
 }));
 
@@ -75,7 +88,14 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    res.json({ ok: true });
+  });
 });
 
 app.get("/api/me", (req, res) => {
@@ -151,6 +171,33 @@ app.get("/api/users", requireAdmin, async (req, res) => {
   }
 });
 
+app.put("/api/users/:id/password", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: "New password must be at least 8 characters" });
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const result = await pool.query(
+      `UPDATE users SET password_hash = $1, first_login = TRUE
+       WHERE user_id = $2 RETURNING user_id, username`,
+      [passwordHash, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ ok: true, user: result.rows[0] });
+  } catch (err) {
+    console.error("Change password error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 const PORT = process.env.PORT || 4000;
 const ANTHROPIC_ADMIN_KEY = process.env.ANTHROPIC_ADMIN_KEY;
 const OPENAI_ADMIN_KEY = process.env.OPENAI_ADMIN_KEY;
@@ -159,7 +206,7 @@ const HETZNER_MONITORING_TOKEN = process.env.HETZNER_MONITORING_TOKEN;
 // ---- Anthropic (Claude) cost report ----
 app.get("/api/anthropic-costs", requireAuth, async (req, res) => {
   if (!ANTHROPIC_ADMIN_KEY) {
-    return res.status(500).json({ error: "ANTHROPIC_ADMIN_KEY missing on server" });
+    return res.status(503).json({ error: "Anthropic provider not configured" });
   }
   try {
     const days = Number(req.query.days || 7);
@@ -191,7 +238,7 @@ app.get("/api/anthropic-costs", requireAuth, async (req, res) => {
 // ---- OpenAI cost report ----
 app.get("/api/openai-costs", requireAuth, async (req, res) => {
   if (!OPENAI_ADMIN_KEY) {
-    return res.status(500).json({ error: "OPENAI_ADMIN_KEY missing on server" });
+    return res.status(503).json({ error: "OpenAI provider not configured" });
   }
   try {
     const days = Number(req.query.days || 7);
@@ -221,13 +268,15 @@ app.get("/api/openai-costs", requireAuth, async (req, res) => {
 // ---- Hetzner cost report (monitoring live + backup fixed) ----
 app.get("/api/hetzner-costs", requireAuth, async (req, res) => {
   if (!HETZNER_MONITORING_TOKEN) {
-    return res.status(500).json({ error: "HETZNER_MONITORING_TOKEN missing on server" });
+    return res.status(503).json({ error: "Hetzner monitoring provider not configured" });
   }
-  if (!process.env.HETZNER_BACKUP_SERVERS_JSON) {
-  return res.status(500).json({
-    error: "HETZNER_BACKUP_SERVERS_JSON missing on server",
-  });
-}
+  const hasBackupJson = !!process.env.HETZNER_BACKUP_SERVERS_JSON;
+  const hasBackupFallback = !!process.env.HETZNER_BACKUP_MONTHLY_TOTAL_USD && !!process.env.HETZNER_BACKUP_SERVER_NAMES;
+  if (!hasBackupJson && !hasBackupFallback) {
+    return res.status(503).json({
+      error: "Hetzner backup provider not configured",
+    });
+  }
   try {
     const data = await getHetznerCosts();
     res.json(data);
@@ -237,6 +286,9 @@ app.get("/api/hetzner-costs", requireAuth, async (req, res) => {
 });
 // ---- GCP cost report (BigQuery billing export) ----
 app.get("/api/gcp-costs", requireAuth, async (req, res) => {
+  if (!process.env.GCP_SERVICE_ACCOUNT_KEY_PATH || !process.env.GCP_PROJECT_ID || !process.env.GCP_BQ_DATASET || !process.env.GCP_BQ_TABLE) {
+    return res.status(503).json({ error: "GCP provider not configured" });
+  }
   try {
     const data = await getGcpCosts();
     res.json(data);
@@ -247,6 +299,9 @@ app.get("/api/gcp-costs", requireAuth, async (req, res) => {
 
 // ---- OpenRouter cost report (per-model activity, last 30 UTC days) ----
 app.get("/api/openrouter-costs", requireAuth, async (req, res) => {
+  if (!process.env.OPENROUTER_API_KEY) {
+    return res.status(503).json({ error: "OpenRouter provider not configured" });
+  }
   try {
     const data = await getOpenRouterCosts();
     res.json(data);
@@ -255,6 +310,17 @@ app.get("/api/openrouter-costs", requireAuth, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`AI cost server listening on http://localhost:${PORT}`);
-});
+async function startServer() {
+  try {
+    await migrate();
+    await bootstrapAdmin();
+  } catch (err) {
+    console.error("Startup initialization failed:", err.message);
+    process.exit(1);
+  }
+  app.listen(PORT, () => {
+    console.log(`AI cost server listening on http://localhost:${PORT}`);
+  });
+}
+
+startServer();

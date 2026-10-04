@@ -75,9 +75,9 @@ export default function AdminUsersPage() {
     setResetError(null);
     try {
       const res = await fetch(`/api/users/${resetTarget.user_id}/password`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: newPassword }),
+        body: JSON.stringify({ newPassword: newPassword })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to reset password");

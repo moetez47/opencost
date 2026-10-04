@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+WORKDIR /opt/server
+
+COPY app/components/server/package*.json ./
+RUN npm install --omit=dev
+
+COPY app/components/server/ ./
+
+RUN chmod +x docker-entrypoint.sh
+
+ENV NODE_ENV=production
+ENV PORT=4000
+
+EXPOSE 4000
+
+RUN adduser -D -u 1001 appuser && chown -R appuser:appuser /opt/server
+USER appuser
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

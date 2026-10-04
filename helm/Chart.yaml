@@ -1,0 +1,5 @@
+apiVersion: v2
+name: enclaive-cost-monitoring
+description: Enclaive multi-cloud cost monitoring platform (OpenCost UI + auth backend)
+version: 0.1.0
+appVersion: "1.0.0"

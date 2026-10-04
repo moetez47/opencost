@@ -19,8 +19,6 @@ interface GcpCostItem {
   source: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
-
 const headers = [
   { key: "service", header: "Service" },
   { key: "date", header: "Date" },
@@ -52,7 +50,7 @@ export default function GcpCostWidget({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(API_BASE + "/api/gcp-costs", {
+        const res = await fetch("/api/gcp-costs", {
           credentials: "include",
         });
         const json = await res.json();

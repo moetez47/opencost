@@ -5,9 +5,9 @@
  */
 
 async function getOpenRouterCosts() {
-  const apiKey = process.env.OPENROUTER_MANAGEMENT_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENROUTER_MANAGEMENT_KEY missing on server");
+    throw new Error("OPENROUTER_API_KEY missing on server");
   }
 
   const response = await fetch("https://openrouter.ai/api/v1/activity", {

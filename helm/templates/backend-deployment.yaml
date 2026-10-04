@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1  # MUST stay 1 — in-memory session store, see README
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - secretRef:
+                name: {{ .Values.postgres.existingSecret }}
+            - secretRef:
+                name: {{ .Values.providerKeys.existingSecret }}
+            - secretRef:
+                name: {{ .Values.session.existingSecret }}
+          env:
+            - name: PORT
+              value: "4000"
+            - name: FRONTEND_ORIGIN
+              value: "https://{{ .Values.ingress.host }}"
+            - name: NODE_ENV
+              value: "production"
